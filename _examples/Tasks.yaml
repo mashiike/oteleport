@@ -3,7 +3,7 @@ version: '3'
 tasks:
   build:
     env:
-      GOARCH: amd64
+      GOARCH: arm64
       GOOS: linux
     sources:
       - ../*.go
