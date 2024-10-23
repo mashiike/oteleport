@@ -1,0 +1,46 @@
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - task --list
+
+  go:test:
+    desc: run tests
+    cmds:
+      - go test -v -race ./...
+
+  proto:generate:
+    desc: generate protobuf
+    cmds:
+      - go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+      - go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+      - protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative --proto_path=opentelemetry-proto --proto_path=. ./proto/*.proto
+
+  local:setup:
+    desc: setup local environment
+    cmds:
+      - task local:clean
+      - docker compose -f docker-compose.yaml up -d
+      - task local:terraform:apply-auto-approve
+
+  local:terraform:apply-auto-approve:
+    cmds:
+      - aqua exec terraform init --reconfigure --upgrade
+      - aqua exec terraform apply --auto-approve --lock=false
+
+  local:clean:
+    desc: clean local environment
+    cmds:
+      - docker compose -f docker-compose.yaml down --volumes --remove-orphans
+      - rm -rf .terraform
+
+  local:open-minio-console:
+    desc: open minio console in browser, minio is s3 compatible storage
+    cmds:
+      - open http://localhost:9001
+
+includes:
+  examples:
+    taskfile: ./_examples/Tasks.yaml
+    dir: ./_examples/

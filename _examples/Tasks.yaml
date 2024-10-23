@@ -1,0 +1,65 @@
+version: '3'
+
+tasks:
+  build:
+    env:
+      GOARCH: amd64
+      GOOS: linux
+    sources:
+      - ../*.go
+      - ../go.mod
+      - ../go.sum
+      - ../cmd/oteleport/*.go
+    generates:
+      - bootstrap
+    cmds:
+      - go build -o bootstrap ../cmd/oteleport/main.go
+
+  lambroll:deploy:
+    desc: deploy AWS Lambda
+    deps: [build]
+    cmds:
+      - defer: {task: clean}
+      - aqua exec lambroll --log-level debug deploy --function-url function_url.jsonnet
+
+  clean:
+    - rm -f bootstrap
+    - rm -f *_dummy.zip
+
+  terraform:init:
+    desc: terraform init
+    cmds:
+      - aqua exec terraform providers lock \
+          -platform=darwin_amd64 \
+          -platform=darwin_arm64 \
+          -platform=linux_amd64 \
+          -platform=linux_arm64 \
+          -platform=windows_amd64
+      - aqua exec terraform init
+
+  terraform:plan:
+    desc: terraform plan
+    cmds:
+      - aqua exec terraform plan
+
+  terraform:apply:
+    desc: terraform apply
+    cmds:
+      - defer: {task: clean}
+      - aqua exec terraform apply
+
+  terraform:destroy:
+    desc: terraform destroy
+    cmds:
+      - defer: {task: clean}
+      - aqua exec terraform destroy
+
+  lambroll:logs:
+    desc: show AWS Lambda logs
+    cmds:
+      - aqua exec lambroll logs --follow --format=short
+
+  lambroll:delete:
+    desc: delete AWS Lambda
+    cmds:
+      - aqua exec lambroll delete --log-level debug
