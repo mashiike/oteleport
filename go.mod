@@ -22,7 +22,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.3.1
 	golang.org/x/sys v0.25.0
 	google.golang.org/grpc v1.67.0
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/protobuf v1.35.1
 )
 
 require (
