@@ -10,6 +10,9 @@ on:
       - synchronize
       - reopened
 
+env:
+  AWS_REGION : ap-northeast-1
+
 jobs:
   test:
     strategy:
