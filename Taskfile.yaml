@@ -10,6 +10,14 @@ tasks:
     cmds:
       - go test -v -race ./...
 
+  go:run:
+    desc: run application
+    env:
+      OTELEPORT_S3_BUCKET: oteleport-test
+      OTELEPORT_CURSOR_ENCRYPTION_KEY: r0JwTGIzoOpTi+gH9t+6i/kIwxDi7kR23uwKAeSxxEE=
+    cmds:
+      - go run ./cmd/oteleport/main.go
+
   proto:generate:
     desc: generate protobuf
     cmds:
