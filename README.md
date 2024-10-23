@@ -195,7 +195,7 @@ $ curl -X POST -H 'Content-Type: application/json' -H "Oteleport-Access-Key: $OT
 `oteleport` can be used as an AWS Lambda function bootstrap.
 this Lambda function is triggered by Lambda Function URL. work as a `http/otlp` and rest api endpoint. 
 
-See [lambda](./lambda) dir for more details.
+See [_examples](./_examples) dir for more details.
 Include terraform code and [lambroll](https://github.com/fujiwara/lambroll) configuration.
 
 
