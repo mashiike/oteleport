@@ -10,7 +10,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.17.41
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.33
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.66.0
-	github.com/fatih/color v1.15.0
+	github.com/fatih/color v1.18.0
 	github.com/fujiwara/ridge v0.12.0
 	github.com/fujiwara/ssm-lookup v0.1.0
 	github.com/google/go-jsonnet v0.20.0
@@ -46,7 +46,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/oklog/ulid/v2 v2.1.0 // indirect
 	github.com/pires/go-proxyproto v0.7.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
