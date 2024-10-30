@@ -6,9 +6,10 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"runtime"
+	"syscall"
 
 	"github.com/mashiike/oteleport"
-	"golang.org/x/sys/unix"
 )
 
 func main() {
@@ -16,7 +17,11 @@ func main() {
 }
 
 func _main() int {
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, unix.SIGTERM)
+	var sigterm os.Signal = syscall.SIGTERM
+	if runtime.GOOS == "windows" {
+		sigterm = os.Interrupt
+	}
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, sigterm)
 	defer stop()
 
 	exitCode, err := oteleport.ClientCLI(ctx, oteleport.ParseClientCLI)
