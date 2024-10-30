@@ -18,6 +18,7 @@ import (
 type ClientApp struct {
 	c          *client.Client
 	outputOpts *ClientSignalOutputOptions
+	otlpClient *otlp.Client
 }
 
 type Profile struct {
@@ -62,9 +63,18 @@ func NewClientApp(p *Profile) (*ClientApp, error) {
 	if err != nil {
 		return nil, err
 	}
+	var otlpClient *otlp.Client
+	if p.Output.OtelExporterOTLPEndpoint != "" {
+		otlpClient, err = otlp.NewClient(p.Output.OtelExporterOTLPEndpoint, p.Output.OTLPClientOptions()...)
+		if err != nil {
+			return nil, oops.Wrapf(err, "failed to create otlp client")
+		}
+	}
+
 	app := &ClientApp{
 		c:          c,
 		outputOpts: &p.Output,
+		otlpClient: otlpClient,
 	}
 	return app, nil
 }
@@ -102,19 +112,23 @@ func (a *ClientApp) FetchTracesData(ctx context.Context, opts *ClientTracesComma
 				slog.DebugContext(ctx, "no more spans available")
 				continue
 			}
-			if a.outputOpts.OtelExporterOTLPEndpoint != "" {
-				return oops.Errorf("signal export to otel exporter is not implemented yet")
-			}
-			tracesData := &tracepb.TracesData{
-				ResourceSpans: resp.GetResourceSpans(),
-			}
+			switch {
+			case a.otlpClient != nil:
+				if err := a.otlpClient.UploadTraces(ctx, resp.GetResourceSpans()); err != nil {
+					slog.WarnContext(ctx, "failed to export trace data", "message", err.Error())
+				}
+			default:
+				tracesData := &tracepb.TracesData{
+					ResourceSpans: resp.GetResourceSpans(),
+				}
 
-			bs, err := otlp.MarshalJSON(tracesData)
-			if err != nil {
-				slog.WarnContext(ctx, "failed to marshal fetch traces data response", "message", err.Error())
-				return nil
+				bs, err := otlp.MarshalJSON(tracesData)
+				if err != nil {
+					slog.WarnContext(ctx, "failed to marshal fetch traces data response", "message", err.Error())
+					return nil
+				}
+				fmt.Println(string(bs))
 			}
-			fmt.Println(string(bs))
 			time.Sleep(fetchPollingInterval)
 		}
 		if !follow {
@@ -160,19 +174,22 @@ func (a *ClientApp) FetchMetricsData(ctx context.Context, opts *ClientMetricsCom
 				slog.DebugContext(ctx, "no more metrics available")
 				continue
 			}
-			if a.outputOpts.OtelExporterOTLPEndpoint != "" {
-				return oops.Errorf("signal export to otel exporter is not implemented yet")
-			}
-			metricsData := &oteleportpb.MetricsData{
-				ResourceMetrics: resp.GetResourceMetrics(),
-			}
+			switch {
+			case a.otlpClient != nil:
+				if err := a.otlpClient.UploadMetrics(ctx, resp.GetResourceMetrics()); err != nil {
+					slog.WarnContext(ctx, "failed to export metrics data", "message", err.Error())
+				}
+			default:
+				metricsData := &oteleportpb.MetricsData{
+					ResourceMetrics: resp.GetResourceMetrics(),
+				}
+				bs, err := otlp.MarshalJSON(metricsData)
+				if err != nil {
+					slog.WarnContext(ctx, "failed to marshal fetch metrics data response", "message", err.Error())
+				}
 
-			bs, err := otlp.MarshalJSON(metricsData)
-			if err != nil {
-				slog.WarnContext(ctx, "failed to marshal fetch metrics data response", "message", err.Error())
+				fmt.Println(string(bs))
 			}
-
-			fmt.Println(string(bs))
 			time.Sleep(fetchPollingInterval)
 		}
 		if !follow {
