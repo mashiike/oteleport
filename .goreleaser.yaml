@@ -5,7 +5,8 @@ before:
     - go mod download
 
 builds:
-  - env:
+  - id: oteleport
+    env:
       - CGO_ENABLED=0
     dir: ./cmd/oteleport
     main: main.go
@@ -19,7 +20,8 @@ builds:
     goarch:
       - amd64
       - arm64
-  - env:
+  - id: oteleport-client
+    env:
       - CGO_ENABLED=0
     dir: ./cmd/oteleport-client
     main: main.go
