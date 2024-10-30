@@ -119,7 +119,7 @@ func (s *Server) setupAPI() {
 	base.HandleFunc(fetchLogsPath, s.serveFetchLogs)
 	base.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			slog.Info("accept api request", "method", r.Method, "path", r.URL.Path)
+			slog.Info("accept api request", "method", r.Method, "path", r.URL.Path, "content_type", r.Header.Get("Content-Type"))
 			next.ServeHTTP(w, r)
 		})
 	})
@@ -357,16 +357,20 @@ func parseRequest[T proto.Message](r *http.Request, v T) error {
 func writeError(w http.ResponseWriter, r *http.Request, st *status.Status, code int) {
 	switch r.Header.Get("Accept") {
 	case "application/json":
+		slog.Debug("response content type", "content_type", "application/json")
 		writeErrorJSON(w, st, code)
 	case "application/protobuf", "application/x-protobuf":
+		slog.Debug("response content type", "content_type", "application/protobuf")
 		writeErrorProto(w, st, code)
-	case "*/*":
+	case "*/*", "":
+		slog.Debug("response content type", "content_type", "*/*")
 		if r.Header.Get("Content-Type") == "application/json" {
 			writeErrorJSON(w, st, code)
 		} else {
 			writeErrorProto(w, st, code)
 		}
 	default:
+		slog.Debug("response content type", "content_type", r.Header.Get("Accept"))
 		writeErrorJSON(w, st, code)
 	}
 }
@@ -399,16 +403,20 @@ func writeErrorJSON(w http.ResponseWriter, st *status.Status, code int) {
 func writeResponse(w http.ResponseWriter, r *http.Request, v proto.Message) {
 	switch r.Header.Get("Accept") {
 	case "application/json":
+		slog.Debug("response content type", "content_type", "application/json")
 		writeResponseJSON(w, v)
 	case "application/protobuf", "application/x-protobuf":
+		slog.Debug("response content type", "content_type", "application/protobuf")
 		writeResponseProto(w, v)
-	case "*/*":
+	case "*/*", "":
+		slog.Debug("response content type", "content_type", "*/*")
 		if r.Header.Get("Content-Type") == "application/json" {
 			writeResponseJSON(w, v)
 		} else {
 			writeResponseProto(w, v)
 		}
 	default:
+		slog.Debug("response content type", "content_type", r.Header.Get("Accept"))
 		writeResponseJSON(w, v)
 	}
 }
