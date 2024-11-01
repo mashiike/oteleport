@@ -8,6 +8,7 @@ import (
 	"github.com/mashiike/go-otlp-helper/otlp"
 	oteleportpb "github.com/mashiike/oteleport/proto"
 	"github.com/stretchr/testify/require"
+	logspb "go.opentelemetry.io/proto/otlp/logs/v1"
 	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 )
@@ -71,7 +72,7 @@ func TestConvertFlattenDataPoints(t *testing.T) {
 func TestConvertFlattenLogRecords(t *testing.T) {
 	bs, err := os.ReadFile("testdata/logs.json")
 	require.NoError(t, err)
-	var ld oteleportpb.LogsData
+	var ld logspb.LogsData
 	require.NoError(t, otlp.UnmarshalJSON(bs, &ld))
 	actual := oteleportpb.ConvertToFlattenLogRecords(ld.GetResourceLogs())
 	require.NotNil(t, actual)
@@ -87,7 +88,7 @@ func TestConvertFlattenLogRecords(t *testing.T) {
 
 	restoreAcutal := oteleportpb.ConvertFromFlattenLogRecords(actual)
 	require.NotNil(t, restoreAcutal)
-	restoreActualJSON, err := otlp.MarshalJSON(&oteleportpb.LogsData{
+	restoreActualJSON, err := otlp.MarshalJSON(&logspb.LogsData{
 		ResourceLogs: restoreAcutal,
 	})
 	require.NoError(t, err)
