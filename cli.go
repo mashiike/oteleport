@@ -50,7 +50,11 @@ func ParseServerCLI(args []string) (string, *ServerCLIOptions, func(), error) {
 		return "", nil, nil, fmt.Errorf("failed to parse args: %w", err)
 	}
 	sub := strings.Fields(c.Command())[0]
-	return sub, &opts, func() { c.PrintUsage(true) }, nil
+	return sub, &opts, func() {
+		if err := c.PrintUsage(true); err != nil {
+			slog.WarnContext(context.Background(), "failed to print usage", "message", err)
+		}
+	}, nil
 }
 
 func ServerCLI(ctx context.Context, parse ServerCLIParseFunc) (int, error) {
@@ -183,7 +187,11 @@ func ParseClientCLI(args []string) (string, *ClientCLIOptions, func(), error) {
 		return "", nil, nil, fmt.Errorf("failed to parse args: %w", err)
 	}
 	sub := strings.Fields(c.Command())[0]
-	return sub, &opts, func() { c.PrintUsage(true) }, nil
+	return sub, &opts, func() {
+		if err := c.PrintUsage(true); err != nil {
+			slog.WarnContext(context.Background(), "failed to print usage", "message", err)
+		}
+	}, nil
 }
 
 func ClientCLI(ctx context.Context, parse ClientCLIParseFunc) (int, error) {
