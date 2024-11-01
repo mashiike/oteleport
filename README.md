@@ -203,35 +203,11 @@ Include terraform code and [lambroll](https://github.com/fujiwara/lambroll) conf
 
 if you followoing config, `oteleport` save OpenTelemetry signals convert to flat structure and json lines.
 this option is useful for Amazon Ahena
+
+<details>
+<summary> traces table schema </summary>
+
 ```jsonnet
-local must_env = std.native('must_env');
-
-{
-  access_keys: [
-    must_env('OTELEPORT_ACCESS_KEY'),
-  ],
-  storage: {
-    cursor_encryption_key: must_env('OTELEPORT_CURSOR_ENCRYPTION_KEY'),
-    location: 's3://' + must_env('OTELEPORT_S3_BUCKET') + '/',
-    flatten: true, // save OpenTelemetry signals convert to flat structure and json lines
-  },
-  otlp: {
-    grpc: {
-      enable: true,
-      address: '0.0.0.0:4317',
-    },
-  },
-  api: {
-    http: {
-      enable: true,
-      address: '0.0.0.0:8080',
-    },
-  },
-}
-```
-
-Athena table schema examples
-```sql
 CREATE EXTERNAL TABLE IF NOT EXISTS oteleport_traces (
     traceId STRING,
     spanId STRING,
@@ -241,19 +217,54 @@ CREATE EXTERNAL TABLE IF NOT EXISTS oteleport_traces (
     startTimeUnixNano BIGINT,
     endTimeUnixNano BIGINT,
     traceState STRING,
-    resourceAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+    resourceAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<
+        stringValue: STRING,
+        boolValue: BOOLEAN,
+        intValue: BIGINT,
+        doubleValue: DOUBLE,
+        arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+        kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+    >>>,
     droppedResourceAttributesCount INT,
     resourceSpanSchemaUrl STRING,
     scopeName STRING,
     scopeVersion STRING,
-    scopeAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+    scopeAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<
+        stringValue: STRING,
+        boolValue: BOOLEAN,
+        intValue: BIGINT,
+        doubleValue: DOUBLE,
+        arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+        kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+    >>>,
     droppedScopeAttributesCount INT,
     scopeSpanSchemaUrl STRING,
-    attributes ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+    attributes ARRAY<STRUCT<key: STRING, value: STRUCT<
+        stringValue: STRING,
+        boolValue: BOOLEAN,
+        intValue: BIGINT,
+        doubleValue: DOUBLE,
+        arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+        kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+    >>>,
     droppedAttributesCount INT,
-    events ARRAY<STRUCT<name: STRING, timeUnixNano: BIGINT, attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>>,
+    events ARRAY<STRUCT<name: STRING, timeUnixNano: BIGINT, attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<
+        stringValue: STRING,
+        boolValue: BOOLEAN,
+        intValue: BIGINT,
+        doubleValue: DOUBLE,
+        arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+        kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+    >>>>>,
     droppedEventsCount INT,
-    links ARRAY<STRUCT<traceId: STRING, spanId: STRING, attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>>,
+    links ARRAY<STRUCT<traceId: STRING, spanId: STRING, attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<
+        stringValue: STRING,
+        boolValue: BOOLEAN,
+        intValue: BIGINT,
+        doubleValue: DOUBLE,
+        arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+        kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+    >>>>>,
     droppedLinksCount INT,
     status STRUCT<code: INT, message: STRING>,
     flags INT
@@ -275,24 +286,52 @@ TBLPROPERTIES (
     'projection.partition.interval.unit' = 'HOURS',
     'storage.location.template' = 's3://<your s3 bucket name>/traces/${partition}/'
 );
+```
 
+</details>
+
+<details>
+<summary> metrics table schema </summary>
+
+```jsonnet
 CREATE EXTERNAL TABLE IF NOT EXISTS oteleport_metrics (
     description STRING,
     name STRING,
     unit STRING,
     startTimeUnixNano BIGINT,
     timeUnixNano BIGINT,
-    resourceAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+    resourceAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<
+        stringValue: STRING,
+        boolValue: BOOLEAN,
+        intValue: BIGINT,
+        doubleValue: DOUBLE,
+        arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+        kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+    >>>,
     droppedResourceAttributesCount INT,
     resourceMetricSchemaUrl STRING,
     scopeName STRING,
     scopeVersion STRING,
-    scopeAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+    scopeAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<
+        stringValue: STRING,
+        boolValue: BOOLEAN,
+        intValue: BIGINT,
+        doubleValue: DOUBLE,
+        arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+        kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+    >>>,
     droppedScopeAttributesCount INT,
     scopeMetricSchemaUrl STRING,
     histogram STRUCT<
         dataPoint: STRUCT<
-            attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+            attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<
+                stringValue: STRING,
+                boolValue: BOOLEAN,
+                intValue: BIGINT,
+                doubleValue: DOUBLE,
+                arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+                kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+            >>>,
             startTimeUnixNano: BIGINT,
             timeUnixNano: BIGINT,
             count: BIGINT,
@@ -308,7 +347,14 @@ CREATE EXTERNAL TABLE IF NOT EXISTS oteleport_metrics (
     >,
     exponentialHistogram STRUCT<
         dataPoint: STRUCT<
-            attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+            attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<
+                stringValue: STRING,
+                boolValue: BOOLEAN,
+                intValue: BIGINT,
+                doubleValue: DOUBLE,
+                arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+                kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+            >>>,
             startTimeUnixNano: BIGINT,
             timeUnixNano: BIGINT,
             count: BIGINT,
@@ -327,7 +373,14 @@ CREATE EXTERNAL TABLE IF NOT EXISTS oteleport_metrics (
     >,
     summary STRUCT<
         dataPoint: STRUCT<
-            attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+            attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<
+                stringValue: STRING,
+                boolValue: BOOLEAN,
+                intValue: BIGINT,
+                doubleValue: DOUBLE,
+                arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+                kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+            >>>,
             startTimeUnixNano: BIGINT,
             timeUnixNano: BIGINT,
             count: BIGINT,
@@ -336,7 +389,14 @@ CREATE EXTERNAL TABLE IF NOT EXISTS oteleport_metrics (
         >
     >,
     gauge STRUCT<dataPoint: STRUCT<
-        attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+        attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<
+            stringValue: STRING,
+            boolValue: BOOLEAN,
+            intValue: BIGINT,
+            doubleValue: DOUBLE,
+            arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+            kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+        >>>,
         startTimeUnixNano: BIGINT,
         timeUnixNano: BIGINT,
         asDouble: DOUBLE, 
@@ -345,7 +405,14 @@ CREATE EXTERNAL TABLE IF NOT EXISTS oteleport_metrics (
         flags: INT
     >>,
     sum STRUCT<dataPoint: STRUCT<
-        attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+        attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<
+            stringValue: STRING,
+            boolValue: BOOLEAN,
+            intValue: BIGINT,
+            doubleValue: DOUBLE,
+            arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+            kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+        >>>,
         startTimeUnixNano: BIGINT,
         timeUnixNano: BIGINT,
         asDouble: DOUBLE, 
@@ -372,8 +439,15 @@ TBLPROPERTIES (
     'projection.partition.interval.unit' = 'HOURS',
     'storage.location.template' = 's3://<your s3 bucket name>/metrics/${partition}/'
 );
+```
 
-CREATE EXTERNAL TABLE IF NOT EXISTS oteleport_logs (
+</details>
+
+<details>
+<summary> logs table schema </summary>
+
+```jsonnet
+REATE EXTERNAL TABLE IF NOT EXISTS oteleport_logs (
     resourceAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<
         stringValue: STRING,
         boolValue: BOOLEAN,
@@ -431,6 +505,21 @@ TBLPROPERTIES (
     'projection.partition.interval.unit' = 'HOURS',
     'storage.location.template' = 's3://<your s3 bucket name>/logs/${partition}/'
 );
+```
+
+</details>
+
+example query:
+```sql
+select 
+    cast(from_unixtime(traces.startTimeUnixNano/1000000000) as date) as ymd,
+    rs.value.stringValue as service_name,
+    count(distinct traceId) as trace_count,
+    count(distinct spanId) as span_count
+from oteleport_traces as traces
+cross join unnest(traces.resourceAttributes) with ordinality as t(rs, rs_index)
+where traces.partition like '2024/11/%' and rs.key = 'service.name'
+group by 1,2 
 ```
 
 ## License
