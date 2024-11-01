@@ -204,6 +204,33 @@ Include terraform code and [lambroll](https://github.com/fujiwara/lambroll) conf
 if you followoing config, `oteleport` save OpenTelemetry signals convert to flat structure and json lines.
 this option is useful for Amazon Ahena
 
+```jsonnet
+local must_env = std.native('must_env');
+
+{
+  access_keys: [
+    must_env('OTELEPORT_ACCESS_KEY'),
+  ],
+  storage: {
+    cursor_encryption_key: must_env('OTELEPORT_CURSOR_ENCRYPTION_KEY'),
+    location: 's3://' + must_env('OTELEPORT_S3_BUCKET') + '/',
+    flatten: true, // <- add this option
+  },
+  otlp: {
+    grpc: {
+      enable: true,
+      address: '0.0.0.0:4317',
+    },
+  },
+  api: {
+    http: {
+      enable: true,
+      address: '0.0.0.0:8080',
+    },
+  },
+}
+```
+
 <details>
 <summary> traces table schema </summary>
 
