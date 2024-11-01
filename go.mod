@@ -15,14 +15,15 @@ require (
 	github.com/fujiwara/ssm-lookup v0.1.0
 	github.com/google/go-jsonnet v0.20.0
 	github.com/gorilla/mux v1.8.1
-	github.com/mashiike/go-otlp-helper v0.3.0
+	github.com/mashiike/go-otlp-helper v0.4.1
 	github.com/mashiike/slogutils v0.4.0
 	github.com/samber/lo v1.38.1
 	github.com/samber/oops v1.13.1
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/proto/otlp v1.3.1
 	golang.org/x/sys v0.26.0
-	google.golang.org/grpc v1.67.0
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20241007155032-5fefd90f89a9
+	google.golang.org/grpc v1.67.1
 	google.golang.org/protobuf v1.35.1
 )
 
@@ -53,10 +54,9 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc // indirect
-	golang.org/x/net v0.29.0 // indirect
-	golang.org/x/text v0.18.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
+	golang.org/x/net v0.30.0 // indirect
+	golang.org/x/text v0.19.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20241007155032-5fefd90f89a9 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	sigs.k8s.io/yaml v1.1.0 // indirect

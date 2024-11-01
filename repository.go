@@ -442,7 +442,10 @@ func (r *S3SignalRepository) FetchTracesData(ctx context.Context, input *otelepo
 				}
 				data.ResourceSpans = oteleportpb.ConvertFromFlattenSpans(flattenSpans)
 			}
-			resourceSpans := otlp.SplitResourceSpans(data.GetResourceSpans())
+			resourceSpans := otlp.FilterResourceSpans(
+				data.GetResourceSpans(),
+				otlp.SpanInTimeRangeFilter(startTime, endTime),
+			)
 			dataLen := len(resourceSpans)
 			slog.DebugContext(ctx, "restore spans", "spans", dataLen, "key", *obj.Key, "current", num, "limit", limit)
 			if cursorObj.Offset != 0 && cursorObj.Offset < len(resourceSpans) {
@@ -542,7 +545,10 @@ func (r *S3SignalRepository) FetchMetricsData(ctx context.Context, input *otelep
 				}
 				data.ResourceMetrics = oteleportpb.ConvertFromFlattenDataPoints(flattenDataPoints)
 			}
-			resourceMetrics := otlp.SplitResourceMetrics(data.GetResourceMetrics())
+			resourceMetrics := otlp.FilterResourceMetrics(
+				data.GetResourceMetrics(),
+				otlp.MetricDataPointInTimeRangeFilter(startTime, endTime),
+			)
 			dataLen := len(resourceMetrics)
 			slog.DebugContext(ctx, "restore metrics", "metrics", dataLen, "key", *obj.Key)
 			if cursorObj.Offset != 0 && cursorObj.Offset < len(resourceMetrics) {
@@ -640,7 +646,10 @@ func (r *S3SignalRepository) FetchLogsData(ctx context.Context, input *oteleport
 				}
 				data.ResourceLogs = oteleportpb.ConvertFromFlattenLogRecords(flattenLogRecords)
 			}
-			resourceLogs := otlp.SplitResourceLogs(data.GetResourceLogs())
+			resourceLogs := otlp.FilterResourceLogs(
+				data.GetResourceLogs(),
+				otlp.LogRecordInTimeRangeFilter(startTime, endTime),
+			)
 			dataLen := len(resourceLogs)
 			slog.DebugContext(ctx, "restore logs", "logs", dataLen, "key", *obj.Key)
 			if cursorObj.Offset != 0 && cursorObj.Offset < len(resourceLogs) {
