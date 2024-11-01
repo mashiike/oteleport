@@ -15,7 +15,7 @@ require (
 	github.com/fujiwara/ssm-lookup v0.1.0
 	github.com/google/go-jsonnet v0.20.0
 	github.com/gorilla/mux v1.8.1
-	github.com/mashiike/go-otlp-helper v0.4.0
+	github.com/mashiike/go-otlp-helper v0.4.1
 	github.com/mashiike/slogutils v0.4.0
 	github.com/samber/lo v1.38.1
 	github.com/samber/oops v1.13.1

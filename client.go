@@ -12,6 +12,8 @@ import (
 	"github.com/mashiike/oteleport/pkg/client"
 	oteleportpb "github.com/mashiike/oteleport/proto"
 	"github.com/samber/oops"
+	logspb "go.opentelemetry.io/proto/otlp/logs/v1"
+	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 )
 
@@ -180,7 +182,7 @@ func (a *ClientApp) FetchMetricsData(ctx context.Context, opts *ClientMetricsCom
 					slog.WarnContext(ctx, "failed to export metrics data", "message", err.Error())
 				}
 			default:
-				metricsData := &oteleportpb.MetricsData{
+				metricsData := &metricspb.MetricsData{
 					ResourceMetrics: resp.GetResourceMetrics(),
 				}
 				bs, err := otlp.MarshalJSON(metricsData)
@@ -238,7 +240,7 @@ func (a *ClientApp) FetchLogsData(ctx context.Context, opts *ClientLogsCommandOp
 			if a.outputOpts.OtelExporterOTLPEndpoint != "" {
 				return oops.Errorf("signal export to otel exporter is not implemented yet")
 			}
-			logsData := &oteleportpb.LogsData{
+			logsData := &logspb.LogsData{
 				ResourceLogs: resp.GetResourceLogs(),
 			}
 
