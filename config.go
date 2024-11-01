@@ -193,7 +193,7 @@ func (c *StorageConfig) Validate(parent *ServerConfig) error {
 		c.GZip = Coalasce(parent.Storage.GZip, Pointer(true))
 	}
 	if c.Flatten == nil {
-		c.Flatten = Coalasce(parent.Storage.Flatten, Pointer(true))
+		c.Flatten = Coalasce(parent.Storage.Flatten, Pointer(false))
 	}
 	if c.Location == "" {
 		return oops.Errorf("location is required")
