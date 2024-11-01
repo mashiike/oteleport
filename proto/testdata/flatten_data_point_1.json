@@ -1,0 +1,38 @@
+{
+  "description": "I am a Gauge",
+  "gauge": {
+    "dataPoint": {
+      "asDouble": 10,
+      "attributes": [
+        {
+          "key": "my.gauge.attr",
+          "value": {
+            "stringValue": "some value"
+          }
+        }
+      ],
+      "timeUnixNano": "1544712660300000000"
+    }
+  },
+  "name": "my.gauge",
+  "resourceAttributes": [
+    {
+      "key": "service.name",
+      "value": {
+        "stringValue": "my.service"
+      }
+    }
+  ],
+  "scopeAttributes": [
+    {
+      "key": "my.scope.attribute",
+      "value": {
+        "stringValue": "some scope attribute"
+      }
+    }
+  ],
+  "scopeName": "my.library",
+  "scopeVersion": "1.0.0",
+  "timeUnixNano": "1544712660300000000",
+  "unit": "1"
+}
