@@ -199,6 +199,240 @@ See [_examples](./_examples) dir for more details.
 Include terraform code and [lambroll](https://github.com/fujiwara/lambroll) configuration.
 
 
+## Storage Flatten Options
+
+if you followoing config, `oteleport` save OpenTelemetry signals convert to flat structure and json lines.
+this option is useful for Amazon Ahena
+```jsonnet
+local must_env = std.native('must_env');
+
+{
+  access_keys: [
+    must_env('OTELEPORT_ACCESS_KEY'),
+  ],
+  storage: {
+    cursor_encryption_key: must_env('OTELEPORT_CURSOR_ENCRYPTION_KEY'),
+    location: 's3://' + must_env('OTELEPORT_S3_BUCKET') + '/',
+    flatten: true, // save OpenTelemetry signals convert to flat structure and json lines
+  },
+  otlp: {
+    grpc: {
+      enable: true,
+      address: '0.0.0.0:4317',
+    },
+  },
+  api: {
+    http: {
+      enable: true,
+      address: '0.0.0.0:8080',
+    },
+  },
+}
+```
+
+Athena table schema examples
+```sql
+CREATE EXTERNAL TABLE IF NOT EXISTS oteleport_traces (
+    traceId STRING,
+    spanId STRING,
+    parentSpanId STRING,
+    name STRING,
+    kind INT,
+    startTimeUnixNano BIGINT,
+    endTimeUnixNano BIGINT,
+    traceState STRING,
+    resourceAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+    droppedResourceAttributesCount INT,
+    resourceSpanSchemaUrl STRING,
+    scopeName STRING,
+    scopeVersion STRING,
+    scopeAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+    droppedScopeAttributesCount INT,
+    scopeSpanSchemaUrl STRING,
+    attributes ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+    droppedAttributesCount INT,
+    events ARRAY<STRUCT<name: STRING, timeUnixNano: BIGINT, attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>>,
+    droppedEventsCount INT,
+    links ARRAY<STRUCT<traceId: STRING, spanId: STRING, attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>>,
+    droppedLinksCount INT,
+    status STRUCT<code: INT, message: STRING>,
+    flags INT
+)
+PARTITIONED BY (
+    partition STRING
+)
+ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+WITH SERDEPROPERTIES (
+    'ignore.malformed.json' = 'true'
+)
+LOCATION 's3://<your s3 bucket name>/traces/'
+TBLPROPERTIES (
+    'projection.enabled' = 'true',
+    'projection.partition.type' = 'date',
+    'projection.partition.format' = 'yyyy/MM/dd/HH',
+    'projection.partition.range' = '2023/01/01/00,NOW',
+    'projection.partition.interval' = '1',
+    'projection.partition.interval.unit' = 'HOURS',
+    'storage.location.template' = 's3://<your s3 bucket name>/traces/${partition}/'
+);
+
+CREATE EXTERNAL TABLE IF NOT EXISTS oteleport_metrics (
+    description STRING,
+    name STRING,
+    unit STRING,
+    startTimeUnixNano BIGINT,
+    timeUnixNano BIGINT,
+    resourceAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+    droppedResourceAttributesCount INT,
+    resourceMetricSchemaUrl STRING,
+    scopeName STRING,
+    scopeVersion STRING,
+    scopeAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+    droppedScopeAttributesCount INT,
+    scopeMetricSchemaUrl STRING,
+    histogram STRUCT<
+        dataPoint: STRUCT<
+            attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+            startTimeUnixNano: BIGINT,
+            timeUnixNano: BIGINT,
+            count: BIGINT,
+            sum: DOUBLE,
+            bucketCounts: ARRAY<BIGINT>,
+            explicitBounds: ARRAY<DOUBLE>,
+            exemplars: ARRAY<STRUCT<value: DOUBLE, timestampUnixNano: BIGINT, filteredAttributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>>,
+            flags: INT,
+            min: DOUBLE,
+            max: DOUBLE
+        >,
+        aggregationTemporality: INT
+    >,
+    exponentialHistogram STRUCT<
+        dataPoint: STRUCT<
+            attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+            startTimeUnixNano: BIGINT,
+            timeUnixNano: BIGINT,
+            count: BIGINT,
+            sum: DOUBLE,
+            scale: INT,
+            zeroCount: BIGINT,
+            positive: STRUCT<bucketCounts: ARRAY<BIGINT>, offset: INT>,
+            negative: STRUCT<bucketCounts: ARRAY<BIGINT>, offset: INT>,
+            flags: INT,
+            exemplars: ARRAY<STRUCT<value: DOUBLE, timestampUnixNano: BIGINT, filteredAttributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>>,
+            min: DOUBLE,
+            max: DOUBLE,
+            zeroThreshold: DOUBLE
+        >,
+        aggregationTemporality: INT
+    >,
+    summary STRUCT<
+        dataPoint: STRUCT<
+            attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+            startTimeUnixNano: BIGINT,
+            timeUnixNano: BIGINT,
+            count: BIGINT,
+            sum: DOUBLE,
+            quantileValues: ARRAY<STRUCT<quantile: DOUBLE, value: DOUBLE>>
+        >
+    >,
+    gauge STRUCT<dataPoint: STRUCT<
+        attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+        startTimeUnixNano: BIGINT,
+        timeUnixNano: BIGINT,
+        asDouble: DOUBLE, 
+        asInt: BIGINT,
+        exemplars: ARRAY<STRUCT<value: DOUBLE, timestampUnixNano: BIGINT, filteredAttributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>>,
+        flags: INT
+    >>,
+    sum STRUCT<dataPoint: STRUCT<
+        attributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>,
+        startTimeUnixNano: BIGINT,
+        timeUnixNano: BIGINT,
+        asDouble: DOUBLE, 
+        asInt: BIGINT,
+        exemplars: ARRAY<STRUCT<value: DOUBLE, timestampUnixNano: BIGINT, filteredAttributes: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>>,
+        flags: INT
+    >, aggregationTemporality: INT, isMonotonic: BOOLEAN>,
+    metadata ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>
+)
+PARTITIONED BY (
+    partition STRING
+)
+ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+WITH SERDEPROPERTIES (
+    'ignore.malformed.json' = 'true'
+)
+LOCATION 's3://<your s3 bucket name>/metrics/'
+TBLPROPERTIES (
+    'projection.enabled' = 'true',
+    'projection.partition.type' = 'date',
+    'projection.partition.format' = 'yyyy/MM/dd/HH',
+    'projection.partition.range' = '2023/01/01/00,NOW',
+    'projection.partition.interval' = '1',
+    'projection.partition.interval.unit' = 'HOURS',
+    'storage.location.template' = 's3://<your s3 bucket name>/metrics/${partition}/'
+);
+
+CREATE EXTERNAL TABLE IF NOT EXISTS oteleport_logs (
+    resourceAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<
+        stringValue: STRING,
+        boolValue: BOOLEAN,
+        intValue: BIGINT,
+        doubleValue: DOUBLE,
+        arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+        kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+    >>>,
+    droppedResourceAttributesCount INT,
+    resourceLogSchemaUrl STRING,
+    scopeName STRING,
+    scopeVersion STRING,
+    scopeAttributes ARRAY<STRUCT<key: STRING, value: STRUCT<
+        stringValue: STRING,
+        boolValue: BOOLEAN,
+        intValue: BIGINT,
+        doubleValue: DOUBLE,
+        arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+        kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+    >>>,
+    droppedScopeAttributesCount INT,
+    scopeLogSchemaUrl STRING,
+    timeUnixNano BIGINT,
+    severityNumber INT,
+    severityText STRING,
+    body STRUCT<stringValue: STRING>,
+    attributes ARRAY<STRUCT<key: STRING, value: STRUCT<
+        stringValue: STRING,
+        boolValue: BOOLEAN,
+        intValue: BIGINT,
+        doubleValue: DOUBLE,
+        arrayValue: STRUCT<values: ARRAY<STRUCT<stringValue: STRING>>>,
+        kvlistValue: STRUCT<values: ARRAY<STRUCT<key: STRING, value: STRUCT<stringValue: STRING>>>>
+    >>>,
+    droppedAttributesCount INT,
+    flags INT,
+    traceId STRING,
+    spanId STRING,
+    observedTimeUnixNano BIGINT
+)
+PARTITIONED BY (
+    partition STRING
+)
+ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe'
+WITH SERDEPROPERTIES (
+    'ignore.malformed.json' = 'true'
+)
+LOCATION 's3://<your s3 bucket name>/logs/'
+TBLPROPERTIES (
+    'projection.enabled' = 'true',
+    'projection.partition.type' = 'date',
+    'projection.partition.format' = 'yyyy/MM/dd/HH',
+    'projection.partition.range' = '2023/01/01/00,NOW',
+    'projection.partition.interval' = '1',
+    'projection.partition.interval.unit' = 'HOURS',
+    'storage.location.template' = 's3://<your s3 bucket name>/logs/${partition}/'
+);
+```
+
 ## License
 
 This project is licensed under the MIT License. 
