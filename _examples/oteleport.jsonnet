@@ -2,6 +2,7 @@
   storage: {
     cursor_encryption_key: 'r0JwTGIzoOpTi+gH9t+6i/kIwxDi7kR23uwKAeSxxEE=',
     location: 's3://oteleport-test/',
+    flatten: true,
   },
   otlp: {
     grpc: {

@@ -5,24 +5,10 @@ package oteleport.proto.v1;
 import "opentelemetry/proto/trace/v1/trace.proto";
 import "opentelemetry/proto/metrics/v1/metrics.proto";
 import "opentelemetry/proto/logs/v1/logs.proto";
+import "opentelemetry/proto/common/v1/common.proto";
 
 option go_package = "github.com/mashiike/oteleport/proto";
 
-
-message TracesData {
-    repeated opentelemetry.proto.trace.v1.ResourceSpans resource_spans = 1;
-    string signal_type = 2;
-};
-
-message MetricsData {
-    repeated opentelemetry.proto.metrics.v1.ResourceMetrics resource_metrics = 1;
-    string signal_type = 2;
-};
-
-message LogsData {
-    repeated opentelemetry.proto.logs.v1.ResourceLogs resource_logs = 1;
-    string signal_type = 2;
-};
 
 service OterlportService {
     rpc FetchTracesData(FetchTracesDataRequest) returns (FetchTracesDataResponse) {}
@@ -67,4 +53,117 @@ message FetchLogsDataResponse {
   repeated opentelemetry.proto.logs.v1.ResourceLogs resource_logs = 1;
   string next_cursor = 2;
   bool has_more = 3;
+};
+
+message FlattenSpan {
+    // related ResourceSpans
+    repeated opentelemetry.proto.common.v1.KeyValue resource_attributes = 1;
+    uint32 dropped_resource_attributes_count = 2;
+    string resource_span_schema_url = 3;
+
+    // related ScopeSpans
+    string scope_name = 4;
+    string scope_version = 5;
+    repeated opentelemetry.proto.common.v1.KeyValue scope_attributes = 6;
+    uint32 dropped_scope_attributes_count = 7;
+    string scope_span_schema_url = 8;
+
+    // related Span
+    bytes trace_id = 9;
+    bytes span_id = 10;
+    string trace_state = 11;
+    bytes parent_span_id = 12;
+    string name = 13;
+    opentelemetry.proto.trace.v1.Span.SpanKind kind = 14;
+    fixed64 start_time_unix_nano = 15;
+    fixed64 end_time_unix_nano = 16;
+    repeated opentelemetry.proto.common.v1.KeyValue attributes = 17;
+    uint32 dropped_attributes_count = 18;
+    repeated opentelemetry.proto.trace.v1.Span.Event events = 19;
+    uint32 dropped_events_count = 20;
+    repeated opentelemetry.proto.trace.v1.Span.Link links = 21;
+    uint32 dropped_links_count = 22;
+    opentelemetry.proto.trace.v1.Status status = 23;
+    fixed32 flags = 24;
+};
+
+message FlattenDataPoint {
+    reserved 12,14,16;
+    // related ResourceMetrics
+    repeated opentelemetry.proto.common.v1.KeyValue resource_attributes = 1;
+    uint32 dropped_resource_attributes_count = 2;
+    string resource_metric_schema_url = 3;
+
+    // related ScopeMetric
+    string scope_name = 4;
+    string scope_version = 5;
+    repeated opentelemetry.proto.common.v1.KeyValue scope_attributes = 6;
+    uint32 dropped_scope_attributes_count = 7;
+    string scope_metric_schema_url = 8;
+
+    // related Metric
+    string name = 9;
+    string description = 10;
+    string unit = 11;
+
+    oneof data {
+        FlattenGuage gauge = 13;
+        FlattenSum sum = 15;
+        FlattenHistogram histogram = 17;
+        FlattenExponentialHistogram exponential_histogram = 18;
+        FlattenSummary summary = 19;
+    }
+    repeated opentelemetry.proto.common.v1.KeyValue metadata = 20;
+    fixed64 start_time_unix_nano = 21;
+    fixed64 time_unix_nano = 22;
+}
+
+message FlattenGuage {
+   opentelemetry.proto.metrics.v1.NumberDataPoint data_point = 1;
+}
+
+message FlattenSum {
+    opentelemetry.proto.metrics.v1.NumberDataPoint data_point = 1;
+    opentelemetry.proto.metrics.v1.AggregationTemporality aggregation_temporality = 2;
+    bool is_monotonic = 3;
+}
+
+message FlattenHistogram {
+    opentelemetry.proto.metrics.v1.HistogramDataPoint data_point = 1;
+    opentelemetry.proto.metrics.v1.AggregationTemporality aggregation_temporality = 2;
+}
+
+message FlattenExponentialHistogram {
+    opentelemetry.proto.metrics.v1.ExponentialHistogramDataPoint data_point = 1;
+    opentelemetry.proto.metrics.v1.AggregationTemporality aggregation_temporality = 2;
+}
+
+message FlattenSummary {
+    opentelemetry.proto.metrics.v1.SummaryDataPoint data_point = 1;
+}
+
+message FlattenLogRecord {
+    // related ResourceLogs
+    repeated opentelemetry.proto.common.v1.KeyValue resource_attributes = 1;
+    uint32 dropped_resource_attributes_count = 2;
+    string resource_log_schema_url = 3;
+
+    // related ScopeLogs
+    string scope_name = 4;
+    string scope_version = 5;
+    repeated opentelemetry.proto.common.v1.KeyValue scope_attributes = 6;
+    uint32 dropped_scope_attributes_count = 7;
+    string scope_log_schema_url = 8;
+
+    // related LogRecord
+    fixed64 time_unix_nano = 9;
+    opentelemetry.proto.logs.v1.SeverityNumber severity_number = 10;
+    string severity_text = 11;
+    opentelemetry.proto.common.v1.AnyValue body = 12;
+    repeated opentelemetry.proto.common.v1.KeyValue attributes = 13;
+    uint32 dropped_attributes_count = 14;
+    fixed32 flags = 15;
+    bytes trace_id = 16;
+    bytes span_id = 17;
+    fixed64 observed_time_unix_nano = 18;
 };

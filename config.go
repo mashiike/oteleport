@@ -31,6 +31,7 @@ type AccessKeyConfig struct {
 type StorageConfig struct {
 	CursorEncryptionKey []byte           `json:"cursor_encryption_key"`
 	GZip                *bool            `json:"gzip,omitempty"`
+	Flatten             *bool            `json:"flatten,omitempty"`
 	Location            string           `json:"location"`
 	locationURL         *url.URL         `json:"-"`
 	AWS                 StorageAWSConfig `json:"aws,omitempty"`
@@ -190,6 +191,9 @@ func (c *StorageConfig) Validate(parent *ServerConfig) error {
 	}
 	if c.GZip == nil {
 		c.GZip = Coalasce(parent.Storage.GZip, Pointer(true))
+	}
+	if c.Flatten == nil {
+		c.Flatten = Coalasce(parent.Storage.Flatten, Pointer(false))
 	}
 	if c.Location == "" {
 		return oops.Errorf("location is required")

@@ -18,6 +18,9 @@ import (
 	"github.com/mashiike/go-otlp-helper/otlp"
 	oteleportpb "github.com/mashiike/oteleport/proto"
 	"github.com/samber/oops"
+	logspb "go.opentelemetry.io/proto/otlp/logs/v1"
+	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
+	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
@@ -295,9 +298,8 @@ func startHTTPServer(wg *sync.WaitGroup, ctx context.Context, cancel context.Can
 func (s *Server) handleTraces(ctx context.Context, req *otlp.TraceRequest) (*otlp.TraceResponse, error) {
 	resourceSpans := req.GetResourceSpans()
 	slog.Info("received otlp trace", "total_spans", otlp.TotalSpans(resourceSpans))
-	if err := s.signalRepo.PushTracesData(ctx, &oteleportpb.TracesData{
+	if err := s.signalRepo.PushTracesData(ctx, &tracepb.TracesData{
 		ResourceSpans: resourceSpans,
-		SignalType:    "traces",
 	}); err != nil {
 		errID := RandomString(16)
 		slog.Error("failed to put resource spans", "err_id", errID, "details", err.Error())
@@ -309,9 +311,8 @@ func (s *Server) handleTraces(ctx context.Context, req *otlp.TraceRequest) (*otl
 func (s *Server) handleMetrics(ctx context.Context, req *otlp.MetricsRequest) (*otlp.MetricsResponse, error) {
 	resourceMetrics := req.GetResourceMetrics()
 	slog.Info("received otlp metrics", "total_data_points", otlp.TotalDataPoints(resourceMetrics))
-	if err := s.signalRepo.PushMetricsData(ctx, &oteleportpb.MetricsData{
+	if err := s.signalRepo.PushMetricsData(ctx, &metricspb.MetricsData{
 		ResourceMetrics: resourceMetrics,
-		SignalType:      "metrics",
 	}); err != nil {
 		errID := RandomString(16)
 		slog.Error("failed to put resource metrics", "err_id", errID, "details", err.Error())
@@ -323,9 +324,8 @@ func (s *Server) handleMetrics(ctx context.Context, req *otlp.MetricsRequest) (*
 func (s *Server) handleLogs(ctx context.Context, req *otlp.LogsRequest) (*otlp.LogsResponse, error) {
 	resourceLogs := req.GetResourceLogs()
 	slog.Info("received otlp logs", "total_log_records", otlp.TotalLogRecords(resourceLogs))
-	if err := s.signalRepo.PushLogsData(ctx, &oteleportpb.LogsData{
+	if err := s.signalRepo.PushLogsData(ctx, &logspb.LogsData{
 		ResourceLogs: resourceLogs,
-		SignalType:   "logs",
 	}); err != nil {
 		errID := RandomString(16)
 		slog.Error("failed to put resource logs", "err_id", errID, "details", err.Error())

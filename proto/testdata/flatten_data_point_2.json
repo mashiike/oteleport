@@ -1,0 +1,51 @@
+{
+  "description": "I am a Histogram",
+  "histogram": {
+    "aggregationTemporality": 1,
+    "dataPoint": {
+      "attributes": [
+        {
+          "key": "my.histogram.attr",
+          "value": {
+            "stringValue": "some value"
+          }
+        }
+      ],
+      "bucketCounts": [
+        "1",
+        "1"
+      ],
+      "count": "2",
+      "explicitBounds": [
+        1
+      ],
+      "max": 2,
+      "min": 0,
+      "startTimeUnixNano": "1544712660300000000",
+      "sum": 2,
+      "timeUnixNano": "1544712660300000000"
+    }
+  },
+  "name": "my.histogram",
+  "resourceAttributes": [
+    {
+      "key": "service.name",
+      "value": {
+        "stringValue": "my.service"
+      }
+    }
+  ],
+  "scopeAttributes": [
+    {
+      "key": "my.scope.attribute",
+      "value": {
+        "stringValue": "some scope attribute"
+      }
+    }
+  ],
+  "scopeName": "my.library",
+  "scopeVersion": "1.0.0",
+  "startTimeUnixNano": "1544712660300000000",
+  "timeUnixNano": "1544712660300000000",
+  "unit": "1"
+}
