@@ -1,0 +1,42 @@
+{
+  "description": "I am a Counter",
+  "name": "my.counter",
+  "resourceAttributes": [
+    {
+      "key": "service.name",
+      "value": {
+        "stringValue": "my.service"
+      }
+    }
+  ],
+  "scopeAttributes": [
+    {
+      "key": "my.scope.attribute",
+      "value": {
+        "stringValue": "some scope attribute"
+      }
+    }
+  ],
+  "scopeName": "my.library",
+  "scopeVersion": "1.0.0",
+  "startTimeUnixNano": "1544712660300000000",
+  "sum": {
+    "aggregationTemporality": 1,
+    "dataPoint": {
+      "asDouble": 5,
+      "attributes": [
+        {
+          "key": "my.counter.attr",
+          "value": {
+            "stringValue": "some value"
+          }
+        }
+      ],
+      "startTimeUnixNano": "1544712660300000000",
+      "timeUnixNano": "1544712660300000000"
+    },
+    "isMonotonic": true
+  },
+  "timeUnixNano": "1544712660300000000",
+  "unit": "1"
+}

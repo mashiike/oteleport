@@ -17,6 +17,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/mashiike/go-otlp-helper v0.4.0
 	github.com/mashiike/slogutils v0.4.0
+	github.com/samber/lo v1.38.1
 	github.com/samber/oops v1.13.1
 	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/proto/otlp v1.3.1
@@ -52,7 +53,6 @@ require (
 	github.com/pires/go-proxyproto v0.7.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
-	github.com/samber/lo v1.38.1 // indirect
 	golang.org/x/exp v0.0.0-20230515195305-f3d0a9c9a5cc // indirect
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/text v0.19.0 // indirect

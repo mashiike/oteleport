@@ -23,18 +23,20 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/mashiike/go-otlp-helper/otlp"
 	oteleportpb "github.com/mashiike/oteleport/proto"
+	"github.com/samber/lo"
 	"github.com/samber/oops"
 	logspb "go.opentelemetry.io/proto/otlp/logs/v1"
 	metricspb "go.opentelemetry.io/proto/otlp/metrics/v1"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
 type SignalRepository interface {
-	PushTracesData(ctx context.Context, data *oteleportpb.TracesData) error
-	PushMetricsData(ctx context.Context, data *oteleportpb.MetricsData) error
-	PushLogsData(ctx context.Context, data *oteleportpb.LogsData) error
+	PushTracesData(ctx context.Context, data *tracepb.TracesData) error
+	PushMetricsData(ctx context.Context, data *metricspb.MetricsData) error
+	PushLogsData(ctx context.Context, data *logspb.LogsData) error
 	FetchTracesData(ctx context.Context, input *oteleportpb.FetchTracesDataRequest) (*oteleportpb.FetchTracesDataResponse, error)
 	FetchMetricsData(ctx context.Context, input *oteleportpb.FetchMetricsDataRequest) (*oteleportpb.FetchMetricsDataResponse, error)
 	FetchLogsData(ctx context.Context, input *oteleportpb.FetchLogsDataRequest) (*oteleportpb.FetchLogsDataResponse, error)
@@ -45,6 +47,7 @@ type S3SignalRepository struct {
 	objectPathPrefix    string
 	client              *s3.Client
 	gzip                bool
+	flatten             bool
 	cursorEncryptionKey []byte
 	uploader            *manager.Uploader
 	downloader          *manager.Downloader
@@ -75,6 +78,7 @@ func newS3SignalRepository(cfg *StorageConfig) *S3SignalRepository {
 	return &S3SignalRepository{
 		cursorEncryptionKey: adjustKey(cfg.CursorEncryptionKey, 32),
 		gzip:                cfg.GZip != nil && *cfg.GZip,
+		flatten:             cfg.Flatten != nil && *cfg.Flatten,
 		bucketName:          cfg.locationURL.Host,
 		objectPathPrefix:    strings.TrimPrefix(cfg.locationURL.Path, "/"),
 		client:              client,
@@ -98,7 +102,7 @@ const (
 	partitionForamt = "2006/01/02/15"
 )
 
-func (r *S3SignalRepository) PushTracesData(ctx context.Context, data *oteleportpb.TracesData) error {
+func (r *S3SignalRepository) PushTracesData(ctx context.Context, data *tracepb.TracesData) error {
 	partitionBy := otlp.PartitionResourceSpans(data.GetResourceSpans(), func(rs *tracepb.ResourceSpans) string {
 		if str := otlp.PartitionBySpanStartTime(partitionForamt, time.Local)(rs); str != "" {
 			return str
@@ -109,17 +113,32 @@ func (r *S3SignalRepository) PushTracesData(ctx context.Context, data *oteleport
 		return time.Now().Format(partitionForamt)
 	})
 	for partition, spans := range partitionBy {
-		bs, err := otlp.MarshalJSON(&oteleportpb.TracesData{
-			ResourceSpans: spans,
-			SignalType:    data.GetSignalType(),
-		})
-		if err != nil {
-			return oops.Wrapf(err, "failed to marshal json")
+		var builder strings.Builder
+		enc := otlp.NewJSONEncoder(&builder)
+		var protoData []protoreflect.ProtoMessage
+		if r.flatten {
+			protoData = lo.Map(oteleportpb.ConvertToFlattenSpans(spans), func(s *oteleportpb.FlattenSpan, _ int) protoreflect.ProtoMessage {
+				return s
+			})
+		} else {
+			protoData = []protoreflect.ProtoMessage{
+				&tracepb.TracesData{
+					ResourceSpans: spans,
+				},
+			}
+		}
+		for i, d := range protoData {
+			if i > 0 {
+				builder.WriteString("\n")
+			}
+			if err := enc.Encode(d); err != nil {
+				return oops.Wrapf(err, "failed to encode json")
+			}
 		}
 		spansCount := otlp.TotalSpans(spans)
 		slog.DebugContext(ctx, "push traces data", "partition", partition, "spans", spansCount)
 		objectKeySuffix := fmt.Sprintf("traces/%s/spans-%s-%s.json", partition, time.Now().Format("20060102150405"), RandomString(8))
-		if err := r.putObject(ctx, objectKeySuffix, strings.NewReader(string(bs))); err != nil {
+		if err := r.putObject(ctx, objectKeySuffix, strings.NewReader(builder.String())); err != nil {
 			return oops.Wrapf(err, "failed to put object")
 		}
 	}
@@ -128,7 +147,7 @@ func (r *S3SignalRepository) PushTracesData(ctx context.Context, data *oteleport
 
 var zeroTimeStr = time.Unix(0, 0).In(time.Local).Format(partitionForamt)
 
-func (r *S3SignalRepository) PushMetricsData(ctx context.Context, data *oteleportpb.MetricsData) error {
+func (r *S3SignalRepository) PushMetricsData(ctx context.Context, data *metricspb.MetricsData) error {
 	partitionBy := otlp.PartitionResourceMetrics(data.GetResourceMetrics(), func(rm *metricspb.ResourceMetrics) string {
 		if str := otlp.PartitionByMetricStartTime(partitionForamt, time.Local)(rm); str != "" && str != zeroTimeStr {
 			return str
@@ -139,22 +158,39 @@ func (r *S3SignalRepository) PushMetricsData(ctx context.Context, data *otelepor
 		return time.Now().Format(partitionForamt)
 	})
 	for partition, metrics := range partitionBy {
-		bs, err := otlp.MarshalJSON(&oteleportpb.MetricsData{
-			ResourceMetrics: metrics,
-			SignalType:      data.GetSignalType(),
-		})
-		if err != nil {
-			return oops.Wrapf(err, "failed to marshal json")
+		var builder strings.Builder
+		enc := otlp.NewJSONEncoder(&builder)
+		var protoData []protoreflect.ProtoMessage
+		if r.flatten {
+			protoData = lo.Map(oteleportpb.ConvertToFlattenDataPoints(metrics), func(d *oteleportpb.FlattenDataPoint, _ int) protoreflect.ProtoMessage {
+				return d
+			})
+		} else {
+			protoData = []protoreflect.ProtoMessage{
+				&metricspb.MetricsData{
+					ResourceMetrics: metrics,
+				},
+			}
 		}
+		for i, d := range protoData {
+			if i > 0 {
+				builder.WriteString("\n")
+			}
+			if err := enc.Encode(d); err != nil {
+				return oops.Wrapf(err, "failed to encode json")
+			}
+		}
+		metricsCount := otlp.TotalDataPoints(metrics)
+		slog.DebugContext(ctx, "push metrics data", "partition", partition, "metrics", metricsCount)
 		objectKeySuffix := fmt.Sprintf("metrics/%s/data-points-%s-%s.json", partition, time.Now().Format("20060102150405"), RandomString(8))
-		if err := r.putObject(ctx, objectKeySuffix, strings.NewReader(string(bs))); err != nil {
+		if err := r.putObject(ctx, objectKeySuffix, strings.NewReader(builder.String())); err != nil {
 			return oops.Wrapf(err, "failed to put object")
 		}
 	}
 	return nil
 }
 
-func (r *S3SignalRepository) PushLogsData(ctx context.Context, data *oteleportpb.LogsData) error {
+func (r *S3SignalRepository) PushLogsData(ctx context.Context, data *logspb.LogsData) error {
 	partitionBy := otlp.PartitionResourceLogs(data.GetResourceLogs(), func(rl *logspb.ResourceLogs) string {
 		if str := otlp.PartitionByLogTime(partitionForamt, time.Local)(rl); str != "" {
 			return str
@@ -165,15 +201,32 @@ func (r *S3SignalRepository) PushLogsData(ctx context.Context, data *oteleportpb
 		return time.Now().Format(partitionForamt)
 	})
 	for partition, logs := range partitionBy {
-		bs, err := otlp.MarshalJSON(&oteleportpb.LogsData{
-			ResourceLogs: logs,
-			SignalType:   data.GetSignalType(),
-		})
-		if err != nil {
-			return oops.Wrapf(err, "failed to marshal json")
+		var builder strings.Builder
+		enc := otlp.NewJSONEncoder(&builder)
+		var protoData []protoreflect.ProtoMessage
+		if r.flatten {
+			protoData = lo.Map(oteleportpb.ConvertToFlattenLogRecords(logs), func(r *oteleportpb.FlattenLogRecord, _ int) protoreflect.ProtoMessage {
+				return r
+			})
+		} else {
+			protoData = []protoreflect.ProtoMessage{
+				&logspb.LogsData{
+					ResourceLogs: logs,
+				},
+			}
 		}
+		for i, d := range protoData {
+			if i > 0 {
+				builder.WriteString("\n")
+			}
+			if err := enc.Encode(d); err != nil {
+				return oops.Wrapf(err, "failed to encode json")
+			}
+		}
+		logsCount := otlp.TotalLogRecords(logs)
+		slog.DebugContext(ctx, "push logs data", "partition", partition, "logs", logsCount)
 		objectKeySuffix := fmt.Sprintf("logs/%s/records-%s-%s.json", partition, time.Now().Format("20060102150405"), RandomString(8))
-		if err := r.putObject(ctx, objectKeySuffix, strings.NewReader(string(bs))); err != nil {
+		if err := r.putObject(ctx, objectKeySuffix, strings.NewReader(builder.String())); err != nil {
 			return oops.Wrapf(err, "failed to put object")
 		}
 	}
@@ -375,9 +428,19 @@ func (r *S3SignalRepository) FetchTracesData(ctx context.Context, input *otelepo
 			if err != nil {
 				return false, oops.Wrapf(err, "failed to get object %q", *obj.Key)
 			}
-			var data oteleportpb.TracesData
+			var data tracepb.TracesData
 			if err := otlp.UnmarshalJSON(body, &data); err != nil {
-				return false, oops.Wrapf(err, "failed to unmarshal json")
+				var flattenSpans []*oteleportpb.FlattenSpan
+				dec := otlp.NewJSONDecoder(bytes.NewReader(body))
+				for dec.More() {
+					var span oteleportpb.FlattenSpan
+					if decErr := dec.Decode(&span); decErr != nil {
+						slog.DebugContext(ctx, "failed to decode flatten span", "error", decErr.Error())
+						return false, oops.Wrapf(err, "failed to unmarshal json")
+					}
+					flattenSpans = append(flattenSpans, &span)
+				}
+				data.ResourceSpans = oteleportpb.ConvertFromFlattenSpans(flattenSpans)
 			}
 			resourceSpans := otlp.FilterResourceSpans(
 				data.GetResourceSpans(),
@@ -467,9 +530,20 @@ func (r *S3SignalRepository) FetchMetricsData(ctx context.Context, input *otelep
 			if err != nil {
 				return false, oops.Wrapf(err, "failed to get object %q", *obj.Key)
 			}
-			var data oteleportpb.MetricsData
+			var data metricspb.MetricsData
 			if err := otlp.UnmarshalJSON(body, &data); err != nil {
-				return false, oops.Wrapf(err, "failed to unmarshal json")
+				var flattenDataPoints []*oteleportpb.FlattenDataPoint
+				dec := otlp.NewJSONDecoder(bytes.NewReader(body))
+				for dec.More() {
+					var dp oteleportpb.FlattenDataPoint
+					if decErr := dec.Decode(&dp); decErr != nil {
+						slog.DebugContext(ctx, "failed to decode flatten data point", "error", decErr.Error())
+
+						return false, oops.Wrapf(err, "failed to unmarshal json")
+					}
+					flattenDataPoints = append(flattenDataPoints, &dp)
+				}
+				data.ResourceMetrics = oteleportpb.ConvertFromFlattenDataPoints(flattenDataPoints)
 			}
 			resourceMetrics := otlp.FilterResourceMetrics(
 				data.GetResourceMetrics(),
@@ -558,9 +632,19 @@ func (r *S3SignalRepository) FetchLogsData(ctx context.Context, input *oteleport
 			if err != nil {
 				return false, oops.Wrapf(err, "failed to get object %q", *obj.Key)
 			}
-			var data oteleportpb.LogsData
+			var data logspb.LogsData
 			if err := otlp.UnmarshalJSON(body, &data); err != nil {
-				return false, oops.Wrapf(err, "failed to unmarshal json")
+				var flattenLogRecords []*oteleportpb.FlattenLogRecord
+				dec := otlp.NewJSONDecoder(bytes.NewReader(body))
+				for dec.More() {
+					var lr oteleportpb.FlattenLogRecord
+					if decErr := dec.Decode(&lr); decErr != nil {
+						slog.DebugContext(ctx, "failed to decode flatten log record", "error", decErr.Error())
+						return false, oops.Wrapf(err, "failed to unmarshal json")
+					}
+					flattenLogRecords = append(flattenLogRecords, &lr)
+				}
+				data.ResourceLogs = oteleportpb.ConvertFromFlattenLogRecords(flattenLogRecords)
 			}
 			resourceLogs := otlp.FilterResourceLogs(
 				data.GetResourceLogs(),

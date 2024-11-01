@@ -1,0 +1,52 @@
+{
+  "description": "I am an Exponential Histogram",
+  "exponentialHistogram": {
+    "aggregationTemporality": 1,
+    "dataPoint": {
+      "attributes": [
+        {
+          "key": "my.exponential.histogram.attr",
+          "value": {
+            "stringValue": "some value"
+          }
+        }
+      ],
+      "count": "3",
+      "max": 5,
+      "min": 0,
+      "positive": {
+        "bucketCounts": [
+          "0",
+          "2"
+        ],
+        "offset": 1
+      },
+      "startTimeUnixNano": "1544712660300000000",
+      "sum": 10,
+      "timeUnixNano": "1544712660300000000",
+      "zeroCount": "1"
+    }
+  },
+  "name": "my.exponential.histogram",
+  "resourceAttributes": [
+    {
+      "key": "service.name",
+      "value": {
+        "stringValue": "my.service"
+      }
+    }
+  ],
+  "scopeAttributes": [
+    {
+      "key": "my.scope.attribute",
+      "value": {
+        "stringValue": "some scope attribute"
+      }
+    }
+  ],
+  "scopeName": "my.library",
+  "scopeVersion": "1.0.0",
+  "startTimeUnixNano": "1544712660300000000",
+  "timeUnixNano": "1544712660300000000",
+  "unit": "1"
+}
