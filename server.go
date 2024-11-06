@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -114,7 +115,7 @@ const (
 )
 
 func (s *Server) setupAPI() {
-	base := s.apiMux.PathPrefix(s.cfg.API.HTTP.Prefix + apiPathPrefix).Subrouter()
+	base := s.apiMux.PathPrefix(filepath.Join(s.cfg.API.HTTP.Prefix, apiPathPrefix)).Subrouter()
 	s.apiMux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -151,19 +152,30 @@ func (s *Server) setupAPI() {
 }
 
 func (s *Server) runAsLambdaHandler(ctx context.Context) error {
+	apiPathPrefixForLambda := filepath.Join(s.cfg.API.HTTP.Prefix, apiPathPrefix)
+	otlpPathPrefixForLambda := filepath.Join(s.cfg.OTLP.HTTP.Prefix, "/v1")
+	slog.InfoContext(ctx, "start as lambda handler", "otlp_prefix", otlpPathPrefixForLambda, "api_prefix", apiPathPrefixForLambda)
 	httpMux := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/health" {
+			slog.DebugContext(ctx, "health check")
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		if strings.HasPrefix(r.URL.Path, s.cfg.API.HTTP.Prefix+apiPathPrefix) {
+		if strings.HasPrefix(r.URL.Path, apiPathPrefixForLambda) {
+			slog.DebugContext(ctx, "api request", "path", r.URL.Path)
 			s.apiMux.ServeHTTP(w, r)
 			return
 		}
-		if strings.HasPrefix(r.URL.Path, s.cfg.OTLP.HTTP.Prefix+"/v1") {
-			s.otlpMux.ServeHTTP(w, r)
+		if strings.HasPrefix(r.URL.Path, otlpPathPrefixForLambda) {
+			slog.DebugContext(ctx, "otlp request", "path", r.URL.Path)
+			rc := r.Clone(ctx)
+			if s.cfg.OTLP.HTTP.Prefix != "" {
+				rc.URL.Path = strings.TrimPrefix(rc.URL.Path, s.cfg.OTLP.HTTP.Prefix)
+			}
+			s.otlpMux.ServeHTTP(w, rc)
 			return
 		}
+		slog.DebugContext(ctx, "not found", "path", r.URL.Path)
 		writeError(w, r, status.New(codes.NotFound, "not found"), http.StatusNotFound)
 	})
 	handler := func(ctx context.Context, event json.RawMessage) (interface{}, error) {
