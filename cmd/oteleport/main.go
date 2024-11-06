@@ -24,7 +24,7 @@ func _main() int {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, sigterm)
 	defer stop()
 
-	exitCode, err := oteleport.ClientCLI(ctx, oteleport.ParseClientCLI)
+	exitCode, err := oteleport.ServerCLI(ctx, oteleport.ParseServerCLI)
 	if err != nil {
 		if !errors.Is(err, context.Canceled) {
 			slog.ErrorContext(ctx, "Failed", "details", err.Error())
