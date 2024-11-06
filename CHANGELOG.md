@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.2.2](https://github.com/mashiike/oteleport/compare/v0.2.1...v0.2.2) - 2024-11-06
+- fix flag Color by @mashiike in https://github.com/mashiike/oteleport/pull/17
+- add ServerPrefix Config by @mashiike in https://github.com/mashiike/oteleport/pull/19
+
 ## [v0.2.1](https://github.com/mashiike/oteleport/compare/v0.2.0...v0.2.1) - 2024-11-06
 - Bump github.com/samber/lo from 1.38.1 to 1.47.0 by @dependabot in https://github.com/mashiike/oteleport/pull/14
 - add debug and error ssmlookup functions by @mashiike in https://github.com/mashiike/oteleport/pull/16
