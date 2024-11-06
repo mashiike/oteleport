@@ -115,7 +115,7 @@ const (
 
 func (s *Server) setupAPI() {
 	base := s.apiMux.PathPrefix(s.cfg.API.HTTP.Prefix + apiPathPrefix).Subrouter()
-	s.apiMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	s.apiMux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
 	base.HandleFunc(fetchTracesPath, s.serveFetchTraces)
