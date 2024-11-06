@@ -68,6 +68,7 @@ type OTLPGRPCConfig struct {
 // HTTP configuration
 type OTLPHTTPConfig struct {
 	Enable   *bool        `json:"enable,omitempty"`
+	Prefix   string       `json:"prefix"`
 	Address  string       `json:"address"`
 	Listener net.Listener `json:"-"`
 }
@@ -82,6 +83,7 @@ type APIConfig struct {
 // API HTTP configuration
 type APIHTTPConfig struct {
 	Enable   *bool        `json:"enable,omitempty"`
+	Prefix   string       `json:"prefix"`
 	Address  string       `json:"address"`
 	Listener net.Listener `json:"-"`
 }
