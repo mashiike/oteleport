@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -113,7 +114,7 @@ const (
 )
 
 func (s *Server) setupAPI() {
-	base := s.apiMux.PathPrefix(apiPathPrefix).Subrouter()
+	base := s.apiMux.PathPrefix(s.cfg.API.HTTP.Prefix + apiPathPrefix).Subrouter()
 	s.apiMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	})
@@ -150,9 +151,21 @@ func (s *Server) setupAPI() {
 }
 
 func (s *Server) runAsLambdaHandler(ctx context.Context) error {
-	httpMux := mux.NewRouter()
-	httpMux.PathPrefix("/v1").Handler(s.otlpMux)
-	httpMux.PathPrefix("/api").Handler(s.apiMux)
+	httpMux := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		if strings.HasPrefix(r.URL.Path, s.cfg.API.HTTP.Prefix+apiPathPrefix) {
+			s.apiMux.ServeHTTP(w, r)
+			return
+		}
+		if strings.HasPrefix(r.URL.Path, s.cfg.OTLP.HTTP.Prefix+"/v1") {
+			s.otlpMux.ServeHTTP(w, r)
+			return
+		}
+		writeError(w, r, status.New(codes.NotFound, "not found"), http.StatusNotFound)
+	})
 	handler := func(ctx context.Context, event json.RawMessage) (interface{}, error) {
 		req, err := ridge.NewRequest(event)
 		if err != nil {
@@ -161,8 +174,16 @@ func (s *Server) runAsLambdaHandler(ctx context.Context) error {
 		}
 		req = req.WithContext(ctx)
 		w := ridge.NewResponseWriter()
+		start := time.Now()
 		httpMux.ServeHTTP(w, req)
-		return w.Response(), nil
+		resp := w.Response()
+		slog.InfoContext(ctx, "request processed",
+			"method", req.Method,
+			"path", req.URL.Path,
+			"status", resp.StatusCode,
+			"duration", time.Since(start).String(),
+		)
+		return resp, nil
 	}
 	opts := []lambda.Option{lambda.WithContext(ctx)}
 	if s.TermHandler != nil {
@@ -209,7 +230,11 @@ func (s *Server) runOnLocalServer(ctx context.Context) error {
 	}
 	if valueOrDefault(s.cfg.OTLP.HTTP.Enable, false) {
 		httpMux := http.NewServeMux()
-		httpMux.Handle("/", s.otlpMux)
+		if s.cfg.OTLP.HTTP.Prefix != "" {
+			httpMux.Handle(s.cfg.OTLP.HTTP.Prefix, s.otlpMux)
+		} else {
+			httpMux.Handle("/", s.otlpMux)
+		}
 		httpServer := &http.Server{
 			Addr:    s.cfg.OTLP.HTTP.Address,
 			Handler: httpMux,
