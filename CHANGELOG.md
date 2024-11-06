@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.2.1](https://github.com/mashiike/oteleport/compare/v0.2.0...v0.2.1) - 2024-11-06
+- Bump github.com/samber/lo from 1.38.1 to 1.47.0 by @dependabot in https://github.com/mashiike/oteleport/pull/14
+- add debug and error ssmlookup functions by @mashiike in https://github.com/mashiike/oteleport/pull/16
+
 ## [v0.2.0](https://github.com/mashiike/oteleport/compare/v0.1.0...v0.2.0) - 2024-11-01
 - Bump github.com/fatih/color from 1.15.0 to 1.18.0 by @dependabot in https://github.com/mashiike/oteleport/pull/3
 - Bump google.golang.org/protobuf from 1.34.2 to 1.35.1 by @dependabot in https://github.com/mashiike/oteleport/pull/6
