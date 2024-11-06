@@ -12,14 +12,6 @@
 Pre-built release binaries are provided.
 Download the latest binary from the [Releases page](https://github.com/mashiike/cflog2otel/releases).
 
-`oteleport-server` is server, `oteleport` is client.
-
-### Homebrew for client 
-
-```
-$ brew install mashiike/tap/oteleport
-```
-
 ## Usage
 
 simple config file example. `oteleport.jsonnet`
