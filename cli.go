@@ -21,7 +21,7 @@ type ServerCLIOptions struct {
 	ExtCode    map[string]string `help:"external code values for Jsonnet" env:"OTELEPORT_EXTCODE"`
 
 	LogLevel string `help:"log level (debug, info, warn, error)" default:"info" enum:"debug,info,warn,error" env:"OTELPORT_LOG_LEVEL"`
-	Color    bool   `help:"enable colored output" default:"false" env:"OTELPORT_COLOR"`
+	Color    *bool  `help:"enable colored output" env:"OTELPORT_COLOR" negatable:""`
 
 	Serve   struct{} `cmd:"" help:"start oteleport server" default:"1"`
 	Version struct{} `cmd:"version" help:"show version"`
@@ -100,7 +100,7 @@ func dispatchServerCLI(ctx context.Context, sub string, usage func(), opts *Serv
 
 type ClientCLIOptions struct {
 	LogLevel string `help:"log level (debug, info, warn, error)" default:"info" enum:"debug,info,warn,error" env:"OTELPORT_LOG_LEVEL"`
-	Color    bool   `help:"enable colored output" default:"false" env:"OTELPORT_COLOR"`
+	Color    *bool  `help:"enable colored output" env:"OTELPORT_COLOR"`
 
 	ProfilePath string            `help:"oteleport client profile" default:"" env:"OTELPORT_PROFILE"`
 	ExtStr      map[string]string `help:"external string values for Jsonnet" env:"OTELEPORT_EXTSTR"`
@@ -254,12 +254,14 @@ func dispatchClientCLI(ctx context.Context, sub string, usage func(), opts *Clie
 	return nil
 }
 
-func setupLogger(l string, c bool) error {
+func setupLogger(l string, c *bool) error {
 	var level slog.Level
 	if err := level.UnmarshalText([]byte(l)); err != nil {
 		return fmt.Errorf("failed to unmarshal log level: %w", err)
 	}
-	color.NoColor = c
+	if c != nil {
+		color.NoColor = !*c
+	}
 	logMiddleware := slogutils.NewMiddleware(
 		slog.NewJSONHandler,
 		slogutils.MiddlewareOptions{
