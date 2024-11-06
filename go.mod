@@ -2,8 +2,6 @@ module github.com/mashiike/oteleport
 
 go 1.22.7
 
-toolchain go1.22.7
-
 require (
 	github.com/alecthomas/kong v1.4.0
 	github.com/aws/aws-lambda-go v1.47.0
@@ -60,7 +58,6 @@ require (
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241104194629-dd2ea8efbc28 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
