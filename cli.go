@@ -21,7 +21,7 @@ type ServerCLIOptions struct {
 	ExtCode    map[string]string `help:"external code values for Jsonnet" env:"OTELEPORT_EXTCODE"`
 
 	LogLevel string `help:"log level (debug, info, warn, error)" default:"info" enum:"debug,info,warn,error" env:"OTELPORT_LOG_LEVEL"`
-	Color    bool   `help:"enable colored output" default:"false" env:"OTELPORT_COLOR"`
+	Color    bool   `help:"enable colored output" default:"false" env:"OTELPORT_COLOR" negatable:""`
 
 	Serve   struct{} `cmd:"" help:"start oteleport server" default:"1"`
 	Version struct{} `cmd:"version" help:"show version"`
@@ -259,7 +259,7 @@ func setupLogger(l string, c bool) error {
 	if err := level.UnmarshalText([]byte(l)); err != nil {
 		return fmt.Errorf("failed to unmarshal log level: %w", err)
 	}
-	color.NoColor = c
+	color.NoColor = !c
 	logMiddleware := slogutils.NewMiddleware(
 		slog.NewJSONHandler,
 		slogutils.MiddlewareOptions{
