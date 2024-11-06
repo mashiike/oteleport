@@ -3,7 +3,10 @@ package oteleport
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"log/slog"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -22,6 +25,21 @@ func MakeVM(ctx context.Context) (*jsonnet.VM, error) {
 	cache := &sync.Map{}
 	ssmlookup := ssm.New(awsCfg, cache)
 	for _, nf := range ssmlookup.JsonnetNativeFuncs(ctx) {
+		originFunc := nf.Func
+		nf.Func = func(f func([]interface{}) (interface{}, error), name string) func(args []interface{}) (interface{}, error) {
+			return func(args []interface{}) (interface{}, error) {
+				slog.Debug("call ssmlookup native function", "function_name", name, "args", args)
+				ret, err := f(args)
+				if err != nil {
+					var strArgs []string
+					for _, arg := range args {
+						strArgs = append(strArgs, fmt.Sprintf("%v", arg))
+					}
+					return ret, oops.Wrapf(err, "%s(%s)", name, strings.Join(strArgs, ", "))
+				}
+				return ret, nil
+			}
+		}(originFunc, nf.Name)
 		vm.NativeFunction(nf)
 	}
 	for _, nf := range NativeFunctions {
