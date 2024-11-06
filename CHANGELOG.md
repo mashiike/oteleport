@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.2.3](https://github.com/mashiike/oteleport/compare/v0.2.2...v0.2.3) - 2024-11-06
+- fix lambda by @mashiike in https://github.com/mashiike/oteleport/pull/20
+
 ## [v0.2.2](https://github.com/mashiike/oteleport/compare/v0.2.1...v0.2.2) - 2024-11-06
 - fix flag Color by @mashiike in https://github.com/mashiike/oteleport/pull/17
 - add ServerPrefix Config by @mashiike in https://github.com/mashiike/oteleport/pull/19
