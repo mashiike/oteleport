@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.2.4](https://github.com/mashiike/oteleport/compare/v0.2.3...v0.2.4) - 2024-11-07
+- Feature/change binary name by @mashiike in https://github.com/mashiike/oteleport/pull/22
+- Revert "Feature/change binary name" by @mashiike in https://github.com/mashiike/oteleport/pull/24
+- BinaryName change `oteleport` is client, `oteleport-server` is server by @mashiike in https://github.com/mashiike/oteleport/pull/25
+
 ## [v0.2.3](https://github.com/mashiike/oteleport/compare/v0.2.2...v0.2.3) - 2024-11-06
 - fix lambda by @mashiike in https://github.com/mashiike/oteleport/pull/20
 
