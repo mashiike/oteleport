@@ -11,7 +11,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.17.35
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.66.2
 	github.com/fatih/color v1.18.0
-	github.com/fujiwara/ridge v0.12.0
+	github.com/fujiwara/ridge v0.12.1
 	github.com/fujiwara/ssm-lookup v0.1.0
 	github.com/google/go-jsonnet v0.20.0
 	github.com/gorilla/mux v1.8.1
