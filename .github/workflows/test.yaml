@@ -35,7 +35,7 @@ jobs:
         with:
           version: "3.37"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: aquaproj/aqua-installer@v3.0.1
+      - uses: aquaproj/aqua-installer@v3.1.0
         with:
           aqua_version: v2.28.0
       - name: Check out code into the Go module directory
